@@ -8,6 +8,9 @@ WORKDIR /usr/src/app
 COPY package.json ./
 COPY package-lock.json ./
 
+# Bundle app source
+COPY .env ./
+
 # Install app dependencies
 RUN npm install
 
