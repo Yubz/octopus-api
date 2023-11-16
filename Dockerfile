@@ -8,14 +8,13 @@ WORKDIR /usr/src/app
 COPY package.json ./
 COPY package-lock.json ./
 
-# Bundle app source
-COPY .env ./
-
 # Install app dependencies
 RUN npm install
 
 # Bundle app source
 COPY . .
+# Bundle app source
+COPY .env ./
 
 # Generate and migrate deploy Prisma
 RUN npx prisma generate
