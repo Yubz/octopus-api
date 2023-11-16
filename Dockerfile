@@ -4,21 +4,17 @@ FROM node:18-alpine3.18
 # Create app directory
 WORKDIR /usr/src/app
 
-# A wildcard is used to ensure both package.json AND package-lock.json are copied
-COPY package.json ./
-COPY package-lock.json ./
+# Copy package.json and package-lock.json to the container
+COPY package.json package-lock.json ./
 
 # Install app dependencies
 RUN npm install
 
 # Bundle app source
 COPY . .
-# Bundle app source
-COPY .env ./
 
-# Generate and migrate deploy Prisma
+# Generate Prisma
 RUN npx prisma generate
-RUN npx prisma migrate deploy
 
 # Creates a "dist" folder with the production build
 RUN npm run build
