@@ -1,0 +1,29 @@
+scalar Text
+
+type Position {
+  id: Int!
+  owner: String!
+  mint_timestamp: Int!
+  token0: String!
+  token1: String!
+  fee: String!
+  tick_spacing: String!
+  extension: String!
+  bound_lower_mag: String!
+  bound_lower_sign: String!
+  bound_upper_mag: String!
+  bound_upper_sign: String!
+  initial_amount0: String!
+  initial_amount1: String!
+  sqrt_ratio: String
+  fees0: String
+  fees1: String
+  amount0: String
+  amount1: String
+  total_initial_amount_usd: Float
+  total_current_amount_usd: Float
+  total_fees_amount_usd: Float
+  total_pnl_usd: Float
+  total_apr: Float
+  fee_apr: Float
+}
