@@ -8,6 +8,6 @@ export class PositionsController {
 
 	@Get()
 	getPositions(): Promise<Array<Position>> {
-		return this.positionsService['positions'].findMany({ where: { total_current_amount_usd: { gt: 500 } }, orderBy: { total_current_amount_usd: 'asc' } });
+		return this.positionsService['positions'].findMany({ where: { total_current_amount_usd: { gt: 100 } }, orderBy: { total_current_amount_usd: 'asc' } });
 	}
 }

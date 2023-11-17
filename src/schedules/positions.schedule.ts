@@ -15,9 +15,8 @@ export class PositionsSchedule {
 		private readonly utilsService: UtilsService,
 	) {}
 
-	//@Cron('0 38 * * * *')
+	@Cron('0 01 * * * *')
 	async fetchPositions(): Promise<void> {
-		console.log('fetching positions...');
 		const tokens = await this.ekuboService.getTokens();
 		from(this.positionsService.getPositions())
 			.pipe(
@@ -33,12 +32,8 @@ export class PositionsSchedule {
 			)
 			.subscribe({
 				next: () => {},
-				error: (error) => {
-					console.error('Error occurred in a chunk', error);
-				},
-				complete: () => {
-					console.log('Fetching positions done!');
-				},
+				error: (error) => {},
+				complete: () => {},
 			});
 	}
 }
