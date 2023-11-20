@@ -15,7 +15,7 @@ export class PositionsSchedule {
 		private readonly utilsService: UtilsService,
 	) {}
 
-	@Cron('0 01 * * * *')
+	//@Cron('0 51 * * * *')
 	async fetchPositions(): Promise<void> {
 		const tokens = await this.ekuboService.getTokens();
 		from(this.positionsService.getPositions())

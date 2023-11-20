@@ -26,16 +26,10 @@ export class PositionsService extends PrismaClient implements OnModuleInit {
 
 	async updatePosition(positionsInfos: GetTokenInfoResult, tokens: Array<Token>): Promise<void> {
 		const position = await this.getPosition(positionsInfos.id);
-		if (!position) {
-			console.log('Position not found', positionsInfos.id);
-			return;
-		}
+		if (!position) return;
 		const token0 = tokens.find((token) => token.l2_token_address.slice(-10) === position.token0.slice(-10)) as Token;
 		const token1 = tokens.find((token) => token.l2_token_address.slice(-10) === position.token1.slice(-10)) as Token;
-		if (!token0 || !token1) {
-			console.log('Tokens not found', positionsInfos.id);
-			return;
-		}
+		if (!token0 || !token1) return;
 		const token0Price = Number(token0.price.price);
 		const token1Price = Number(token1.price.price);
 		const initialAmount0 = Number(position.initial_amount0) / 10 ** token0.decimals;

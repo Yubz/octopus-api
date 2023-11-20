@@ -15,6 +15,14 @@ const schema = fs.readFileSync(schemaFile, 'utf8');
 async function bootstrap(checkpoint: Checkpoint) {
 	const app = await NestFactory.create(AppModule, { logger: ['error', 'warn'] });
 
+	/*
+	app.enableCors({
+		allowedHeaders: '*',
+		origin: 'http://localhost:4200',
+		credentials: true,
+	});
+	*/
+
 	checkpoint.start();
 
 	app.use('/graphql', checkpoint.graphql);
