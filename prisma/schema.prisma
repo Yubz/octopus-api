@@ -3,84 +3,54 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "mongodb"
   url      = env("DATABASE_URL")
 }
 
-model checkpoints {
-  id               String @id @db.VarChar(10)
-  block_number     BigInt
-  contract_address String @db.VarChar(66)
-
-  @@map("_checkpoints")
+model Metadata {
+  name  String @id @map("_id")
+  value String
 }
 
-model metadatas {
-  id    String @id @db.VarChar(20)
-  value String @db.VarChar(128)
-
-  @@map("_metadatas")
+model Position {
+  id                       Int            @id @map("_id")
+  owner                    String         
+  mintTimestamp            Int
+  token0                   String       
+  token1                   String         
+  fee                      String        
+  tickSpacing              String       
+  extension                String      
+  boundLowerMag            String       
+  boundLowerSign           String        
+  boundUpperMag            String       
+  boundUpperSign           String      
+  positionInfo             PositionInfo?
+  positionEvents           PositionEvent[]
 }
 
-model template_sources {
-  id               Int     @id @default(autoincrement()) @db.UnsignedInt
-  contract_address String? @db.VarChar(66)
-  start_block      BigInt
-  template         String  @db.VarChar(128)
-
-  @@map("_template_sources")
+model PositionInfo {
+  id                       String           @id @map("_id") @default(auto()) @db.ObjectId
+  position                 Position         @relation(fields: [positionId], references: [id])
+  positionId               Int              @unique       
+  sqrtRatio                String          
+  fees0                    String        
+  fees1                    String          
+  currentAmount0           String          
+  currentAmount1           String          
+  totalInitialAmountUsd    Float          
+  totalCurrentAmountUsd    Float      
+  totalFeesAmountUsd       Float           
+  totalPnlUsd              Float        
+  totalApr                 Float          
+  feeApr                   Float           
 }
 
-model positions {
-  id                       Int     @id
-  owner                    String  @db.VarChar(256)
-  mint_timestamp           Int
-  token0                   String  @db.VarChar(256)
-  token1                   String  @db.VarChar(256)
-  fee                      String  @db.VarChar(256)
-  tick_spacing             String  @db.VarChar(256)
-  extension                String  @db.VarChar(256)
-  bound_lower_mag          String  @db.VarChar(256)
-  bound_lower_sign         String  @db.VarChar(256)
-  bound_upper_mag          String  @db.VarChar(256)
-  bound_upper_sign         String  @db.VarChar(256)
-  initial_amount0          String  @db.VarChar(256)
-  initial_amount1          String  @db.VarChar(256)
-  sqrt_ratio               String? @db.VarChar(256)
-  fees0                    String? @db.VarChar(256)
-  fees1                    String? @db.VarChar(256)
-  amount0                  String? @db.VarChar(256)
-  amount1                  String? @db.VarChar(256)
-  total_initial_amount_usd Float?  @db.Float
-  total_current_amount_usd Float?  @db.Float
-  total_fees_amount_usd    Float?  @db.Float
-  total_pnl_usd            Float?  @db.Float
-  total_apr                Float?  @db.Float
-  fee_apr                  Float?  @db.Float
-
-  @@index([amount0], map: "positions_amount0_index")
-  @@index([amount1], map: "positions_amount1_index")
-  @@index([bound_lower_mag], map: "positions_bound_lower_mag_index")
-  @@index([bound_lower_sign], map: "positions_bound_lower_sign_index")
-  @@index([bound_upper_mag], map: "positions_bound_upper_mag_index")
-  @@index([bound_upper_sign], map: "positions_bound_upper_sign_index")
-  @@index([extension], map: "positions_extension_index")
-  @@index([fee], map: "positions_fee_index")
-  @@index([fee_apr], map: "positions_fee_apr_index")
-  @@index([fees0], map: "positions_fees0_index")
-  @@index([fees1], map: "positions_fees1_index")
-  @@index([id], map: "positions_id_index")
-  @@index([initial_amount0], map: "positions_initial_amount0_index")
-  @@index([initial_amount1], map: "positions_initial_amount1_index")
-  @@index([mint_timestamp], map: "positions_mint_timestamp_index")
-  @@index([owner], map: "positions_owner_index")
-  @@index([sqrt_ratio], map: "positions_sqrt_ratio_index")
-  @@index([tick_spacing], map: "positions_tick_spacing_index")
-  @@index([token0], map: "positions_token0_index")
-  @@index([token1], map: "positions_token1_index")
-  @@index([total_apr], map: "positions_total_apr_index")
-  @@index([total_current_amount_usd], map: "positions_total_current_amount_usd_index")
-  @@index([total_fees_amount_usd], map: "positions_total_fees_amount_usd_index")
-  @@index([total_initial_amount_usd], map: "positions_total_initial_amount_usd_index")
-  @@index([total_pnl_usd], map: "positions_total_pnl_usd_index")
+model PositionEvent {
+  id                       String       @id @map("_id")
+  position                 Position     @relation(fields: [positionId], references: [id])
+  positionId               Int          
+  amount0                  String      
+  amount1                  String      
+  isDeposit                Boolean
 }

@@ -1,15 +1,16 @@
 import { Module } from '@nestjs/common';
 import { ScheduleModule } from '@nestjs/schedule';
 import { HttpModule } from '@nestjs/axios';
-import { PositionsService } from './services/positions.service';
+import { PrismaService } from './services/prisma.service';
 import { EkuboService } from './services/ekubo.service';
-import { PositionsController } from './controllers/positions.controller';
+import { PositionController } from './controllers/position.controller';
 import { UtilsService } from './services/utils.service';
-import { PositionsSchedule } from './schedules/positions.schedule';
+import { PositionSchedule } from './schedules/position.schedule';
+import { EkuboSchedule } from './schedules/ekubo.schedule';
 
 @Module({
 	imports: [ScheduleModule.forRoot(), HttpModule],
-	controllers: [PositionsController],
-	providers: [PositionsService, EkuboService, UtilsService, PositionsSchedule],
+	controllers: [PositionController],
+	providers: [PrismaService, EkuboService, UtilsService, PositionSchedule, EkuboSchedule],
 })
 export class AppModule {}

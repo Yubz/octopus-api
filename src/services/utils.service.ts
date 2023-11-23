@@ -12,7 +12,7 @@ export class UtilsService {
 
 	// Fonction pour calculer l'APR à partir du ROI (0.1 = 10%) et de T (en jours) pour un ROI simple
 	calculateSimpleAPR = (ROI: number, T: number): number => {
-		return (ROI / (T / 365)) * 1;
+		return !ROI ? 0 : (ROI / (T / 365)) * 1;
 	};
 
 	// Fonction pour calculer l'APR à partir du ROI (0.1 = 10%) et de T (en jours) pour un ROI composé

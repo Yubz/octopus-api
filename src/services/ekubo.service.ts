@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { constants, Provider, Contract } from 'starknet';
-import { GetTokenInfoRequest, GetTokenInfoResult, Token, TokenPrice } from '../models/protocols/ekubo.model';
-import { Position } from '../models/entities/position';
+import { GetTokenInfoRequest, GetTokenInfoResult, Token, TokenPrice } from '../models/ekubo.model';
 import { env } from 'process';
+import { Position } from '@prisma/client';
 
 @Injectable()
 export class EkuboService {
@@ -19,7 +19,7 @@ export class EkuboService {
 		return ekuboContract.get_next_token_id();
 	};
 
-	getPositionInfos = async (request: Array<GetTokenInfoRequest>): Promise<Array<GetTokenInfoResult>> => {
+	getPositionInfo = async (request: Array<GetTokenInfoRequest>): Promise<Array<GetTokenInfoResult>> => {
 		const ekuboContract = await this.initEkuboContract(this.POSITIONS);
 		const results = await ekuboContract.get_tokens_info(request);
 
@@ -63,18 +63,18 @@ export class EkuboService {
 			pool_key: {
 				extension: position.extension,
 				fee: position.fee,
-				tick_spacing: position.tick_spacing,
+				tick_spacing: position.tickSpacing,
 				token0: position.token0,
 				token1: position.token1,
 			},
 			bounds: {
 				lower: {
-					mag: position.bound_lower_mag,
-					sign: position.bound_lower_sign,
+					mag: position.boundLowerMag,
+					sign: position.boundLowerSign,
 				},
 				upper: {
-					mag: position.bound_upper_mag,
-					sign: position.bound_upper_sign,
+					mag: position.boundUpperMag,
+					sign: position.boundUpperSign,
 				},
 			},
 		};
