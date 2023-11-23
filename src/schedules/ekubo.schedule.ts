@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Interval } from '@nestjs/schedule';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../services/prisma.service';
 import { Event, RpcProvider, hash, num } from 'starknet';
 import { env } from 'process';
@@ -17,7 +17,7 @@ export class EkuboSchedule {
 		this.rpcProvider = new RpcProvider({ nodeUrl: env.STARKNET_RPC_URL });
 	}
 
-	@Interval(1000 * 60 * 5) // 5 minutes
+	@Cron(CronExpression.EVERY_30_MINUTES)
 	private async fetchPositions(): Promise<void> {
 		let lastBlockSavedDatabase = (await this.prismaService.getLastBlockSaved())?.value;
 		if (!lastBlockSavedDatabase) {
