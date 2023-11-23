@@ -7,13 +7,11 @@ import { env } from 'process';
 async function bootstrap() {
 	const app = await NestFactory.create(AppModule);
 
-	if (env.LOCALHOST) {
-		app.enableCors({
-			allowedHeaders: '*',
-			origin: 'http://localhost:4200',
-			credentials: true,
-		});
-	}
+	app.enableCors({
+		allowedHeaders: '*',
+		origin: env.OCTOPUS_DAPP_URL,
+		credentials: true,
+	});
 
 	await app.listen(3000);
 }
