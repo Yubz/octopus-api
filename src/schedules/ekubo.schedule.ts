@@ -13,12 +13,16 @@ export class EkuboSchedule {
 	private readonly WITHDRAW_KEY = num.toHex(hash.starknetKeccak('Withdraw'));
 	private readonly rpcProvider: RpcProvider;
 
+	private isJobRunning = false;
+
 	constructor(private readonly prismaService: PrismaService) {
 		this.rpcProvider = new RpcProvider({ nodeUrl: env.STARKNET_RPC_URL });
 	}
 
 	@Cron(CronExpression.EVERY_30_MINUTES)
 	private async fetchPositions(): Promise<void> {
+		if (this.isJobRunning) return;
+		this.isJobRunning = true;
 		let lastBlockSavedDatabase = (await this.prismaService.getLastBlockSaved())?.value;
 		if (!lastBlockSavedDatabase) {
 			await this.prismaService.createLastBlockSaved(Number(env.LAST_BLOCK_SAVED));
@@ -49,6 +53,7 @@ export class EkuboSchedule {
 		}
 		console.log(`done fetching`);
 		await this.prismaService.updateLastBlockSaved(toBlock + 1);
+		this.isJobRunning = false;
 	}
 
 	private async fetchEvents(fromBlock: number, toBlock: number): Promise<Array<Event>> {
