@@ -3,11 +3,10 @@ export class PositionInfoDto {
 	sqrtRatio: string;
 	fees0: string;
 	fees1: string;
-	currentAmount0: string;
-	currentAmount1: string;
-	totalInitialAmountUsd: number;
-	totalCurrentAmountUsd: number;
-	totalFeesAmountUsd: number;
+	amount0: string;
+	amount1: string;
+	amountUsd: number;
+	totalFeesUsd: number;
 	totalPnlUsd: number;
 	totalApr: number;
 	feeApr: number;

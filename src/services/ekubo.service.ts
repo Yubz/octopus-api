@@ -6,18 +6,11 @@ import { Position } from '@prisma/client';
 
 @Injectable()
 export class EkuboService {
-	private readonly POSITIONS_NFT = '0x07b696af58c967c1b14c9dde0ace001720635a660a8e90c565ea459345318b30';
 	private readonly POSITIONS = '0x02e0af29598b407c8716b17f6d2795eca1b471413fa03fb145a5e33722184067';
 
 	/******************************************************************************************************************************/
 	/* Ekubo SC *******************************************************************************************************************/
 	/******************************************************************************************************************************/
-
-	getNextTokenId = async (): Promise<bigint> => {
-		const ekuboContract = await this.initEkuboContract(this.POSITIONS_NFT);
-
-		return ekuboContract.get_next_token_id();
-	};
 
 	getPositionInfo = async (request: Array<GetTokenInfoRequest>): Promise<Array<GetTokenInfoResult>> => {
 		const ekuboContract = await this.initEkuboContract(this.POSITIONS);
@@ -50,7 +43,9 @@ export class EkuboService {
 	};
 
 	private getTokenPriceUsd = async (address: string): Promise<TokenPrice> => {
-		return await fetch('https://mainnet-api.ekubo.org/price/' + address + '/0x53c91253bc9682c04929ca02ed00b3e423f6710d2ee7e0d5ebb06f3ecf368a8').then((res) => res.json());
+		return await fetch('https://mainnet-api.ekubo.org/price/' + address + '/0x53c91253bc9682c04929ca02ed00b3e423f6710d2ee7e0d5ebb06f3ecf368a8').then((res) =>
+			res.json(),
+		);
 	};
 
 	/******************************************************************************************************************************/

@@ -38,15 +38,21 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
 	}
 
 	async getPositions(): Promise<Array<PositionDto>> {
+		return this.position.findMany();
+	}
+
+	async getExplorePositions(): Promise<Array<PositionDto>> {
 		return this.position.findMany({
 			include: {
-				positionInfo: {
-					where: { totalCurrentAmountUsd: { gt: 100 } },
-				},
+				positionInfo: true,
+				positionEvents: true,
 			},
-			orderBy: {
+			orderBy: { positionInfo: { totalApr: 'desc' } },
+			where: {
 				positionInfo: {
-					totalApr: 'asc',
+					amountUsd: {
+						gt: 500,
+					},
 				},
 			},
 		});
@@ -124,48 +130,49 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
 		if (!token0?.price?.price || !token1?.price?.price) return;
 		const token0Price = Number(token0.price.price);
 		const token1Price = Number(token1.price.price);
-		/*
-		const eventsAmount0 = position.positionEvents.reduce((amount0: number, event: PositionEventDto) => {
-			const amount = Number(event.amount0) / 10 ** token0.decimals;
-			return event.isDeposit ? amount0 + amount : amount0 - amount;
+
+		const totalDepositedAmount0Usd = position.positionEvents.reduce((amount0: number, event: PositionEventDto) => {
+			const amount = (Number(event.amount0) / 10 ** token0.decimals) * token0Price;
+			return event.isDeposit ? amount0 + amount : amount0;
 		}, 0);
-		*/
-		const initialAmount0 = Number(position.positionEvents[0].amount0) / 10 ** token0.decimals;
-		const initialAmount1 = Number(position.positionEvents[0].amount1) / 10 ** token1.decimals;
-		const totalInitialAmountUsd = initialAmount0 * token0Price + initialAmount1 * token1Price;
-		const totalCurrentAmountUsd =
-			(Number(positionsInfos.amount0) / 10 ** token0.decimals) * token0Price + (Number(positionsInfos.amount1) / 10 ** token1.decimals) * token1Price;
-		const totalFeesAmountUsd =
+		const totalDepositedAmount1Usd = position.positionEvents.reduce((amount1: number, event: PositionEventDto) => {
+			const amount = (Number(event.amount1) / 10 ** token1.decimals) * token1Price;
+			return event.isDeposit ? amount1 + amount : amount1;
+		}, 0);
+		const totalWithdrawedAmount0Usd = position.positionEvents.reduce((amount0: number, event: PositionEventDto) => {
+			const amount = (Number(event.amount0) / 10 ** token0.decimals) * token0Price;
+			return event.isDeposit ? amount0 : amount0 + amount;
+		}, 0);
+		const totalWithdrawedAmount1Usd = position.positionEvents.reduce((amount1: number, event: PositionEventDto) => {
+			const amount = (Number(event.amount1) / 10 ** token1.decimals) * token1Price;
+			return event.isDeposit ? amount1 : amount1 + amount;
+		}, 0);
+		const totalDepositedAmountUsd = totalDepositedAmount0Usd + totalDepositedAmount1Usd;
+		const totalWithdrawedAmountUsd = totalWithdrawedAmount0Usd + totalWithdrawedAmount1Usd;
+
+		const amountUsd = (Number(positionsInfos.amount0) / 10 ** token0.decimals) * token0Price + (Number(positionsInfos.amount1) / 10 ** token1.decimals) * token1Price;
+		const totalCurrentFeesUsd =
 			(Number(positionsInfos.fees0) / 10 ** token0.decimals) * token0Price + (Number(positionsInfos.fees1) / 10 ** token1.decimals) * token1Price;
-		const totalPnlUsd = totalCurrentAmountUsd + totalFeesAmountUsd - totalInitialAmountUsd;
+		const totalPnlUsd = totalWithdrawedAmountUsd + totalCurrentFeesUsd + amountUsd - totalDepositedAmountUsd;
+		const totalFeesUsd = totalWithdrawedAmountUsd - totalDepositedAmountUsd + totalCurrentFeesUsd;
 		const durationPositionInDays = this.utilsService.daysBetweenDates(new Date(position.mintTimestamp * 1000), new Date());
 
 		const data = {
 			sqrtRatio: positionsInfos.pool_price.sqrt_ratio.toString(),
 			fees0: positionsInfos.fees0.toString(),
 			fees1: positionsInfos.fees1.toString(),
-			currentAmount0: positionsInfos.amount0.toString(),
-			currentAmount1: positionsInfos.amount1.toString(),
-			totalInitialAmountUsd: totalInitialAmountUsd,
-			totalCurrentAmountUsd: totalCurrentAmountUsd,
-			totalFeesAmountUsd: totalFeesAmountUsd,
+			amount0: positionsInfos.amount0.toString(),
+			amount1: positionsInfos.amount1.toString(),
+			amountUsd: amountUsd,
+			totalFeesUsd: totalFeesUsd,
 			totalPnlUsd: totalPnlUsd,
-			totalApr: this.utilsService.calculateSimpleAPR(totalPnlUsd / totalInitialAmountUsd, durationPositionInDays),
-			feeApr: this.utilsService.calculateSimpleAPR(totalFeesAmountUsd / totalInitialAmountUsd, durationPositionInDays),
+			totalApr: this.utilsService.calculateSimpleAPR(totalPnlUsd / totalDepositedAmountUsd, durationPositionInDays),
+			feeApr: this.utilsService.calculateSimpleAPR(totalFeesUsd / totalDepositedAmountUsd, durationPositionInDays),
 		};
-
-		await this.positionInfo.upsert({
-			create: {
+		await this.positionInfo.create({
+			data: {
 				...data,
-				position: {
-					connect: {
-						id: position.id,
-					},
-				},
-			},
-			update: data,
-			where: {
-				positionId: positionsInfos.id,
+				positionId: position.id,
 			},
 		});
 	}

@@ -15,8 +15,9 @@ export class PositionSchedule {
 		private readonly utilsService: UtilsService,
 	) {}
 
-	//@Cron('0 00 * * * *')
-	async fetchPositions(): Promise<void> {
+	//@Cron('0 26 * * * *')
+	private async fetchPositions(): Promise<void> {
+		console.log('Fetching positions...');
 		const tokens = await this.ekuboService.getTokens();
 		from(this.prismaService.getPositions())
 			.pipe(
@@ -32,8 +33,12 @@ export class PositionSchedule {
 			)
 			.subscribe({
 				next: () => {},
-				error: (error) => {},
-				complete: () => {},
+				error: (error) => {
+					console.log(error);
+				},
+				complete: () => {
+					console.log('Fetching positions done.');
+				},
 			});
 	}
 }

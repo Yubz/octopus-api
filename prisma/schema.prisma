@@ -36,11 +36,10 @@ model PositionInfo {
   sqrtRatio                String          
   fees0                    String        
   fees1                    String          
-  currentAmount0           String          
-  currentAmount1           String          
-  totalInitialAmountUsd    Float          
-  totalCurrentAmountUsd    Float      
-  totalFeesAmountUsd       Float           
+  amount0                  String          
+  amount1                  String         
+  amountUsd                Float      
+  totalFeesUsd             Float           
   totalPnlUsd              Float        
   totalApr                 Float          
   feeApr                   Float           
