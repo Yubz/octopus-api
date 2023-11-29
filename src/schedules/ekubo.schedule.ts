@@ -117,7 +117,7 @@ export class EkuboSchedule {
 		const positionEvents = await this.prismaService.getPositionEvents(positionId);
 		const positionLiquidity = this.utilsService.getPositionLiquidity(positionEvents);
 
-		if (positionLiquidity === BigNumber.from(liquidity).toNumber()) {
+		if (positionLiquidity.eq(BigNumber.from(liquidity))) {
 			await this.prismaService.deletePosition(positionId);
 		} else {
 			await this.prismaService.addPositionEvent(

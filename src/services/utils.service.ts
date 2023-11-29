@@ -15,8 +15,8 @@ export class UtilsService {
 		return chunkedArr;
 	}
 
-	totalDepositedAmountUsd(position: PositionDto, tokens: Array<Token>): number {
-		if (!position) return 0;
+	depositedAmountUsd(position: PositionDto, tokens: Array<Token>): number {
+		if (!position || !position.positionEvents) return 0;
 		const token0 = tokens.find((token) => token.l2_token_address.slice(-10) === position.token0.slice(-10)) as Token;
 		const token1 = tokens.find((token) => token.l2_token_address.slice(-10) === position.token1.slice(-10)) as Token;
 		if (!token0?.price?.price || !token1?.price?.price) return 0;
@@ -33,8 +33,8 @@ export class UtilsService {
 		return totalDepositedAmount0Usd + totalDepositedAmount1Usd;
 	}
 
-	totalWithdrawedAmountUsd(position: PositionDto, tokens: Array<Token>): number {
-		if (!position) return 0;
+	withdrawedAmountUsd(position: PositionDto, tokens: Array<Token>): number {
+		if (!position || !position.positionEvents) return 0;
 		const token0 = tokens.find((token) => token.l2_token_address.slice(-10) === position.token0.slice(-10)) as Token;
 		const token1 = tokens.find((token) => token.l2_token_address.slice(-10) === position.token1.slice(-10)) as Token;
 		if (!token0?.price?.price || !token1?.price?.price) return 0;
@@ -51,13 +51,13 @@ export class UtilsService {
 		return totalWithdrawedAmount0Usd + totalWithdrawedAmount1Usd;
 	}
 
-	getPositionLiquidity(positionEvents: Array<PositionEventDto>): number {
-		let liquidity = 0;
+	getPositionLiquidity(positionEvents: Array<PositionEventDto>): BigNumber {
+		let liquidity = BigNumber.from(0);
 		positionEvents.forEach((positionEvent: PositionEventDto) => {
 			if (positionEvent.isDeposit) {
-				liquidity += BigNumber.from(positionEvent.liquidity).toNumber();
+				liquidity = liquidity.add(BigNumber.from(positionEvent.liquidity));
 			} else {
-				liquidity -= BigNumber.from(positionEvent.liquidity).toNumber();
+				liquidity = liquidity.sub(BigNumber.from(positionEvent.liquidity));
 			}
 		});
 		return liquidity;
@@ -88,7 +88,7 @@ export class UtilsService {
 	};
 
 	sqrtRatioToPrice = (sqrt_ratio: number): string => {
-		return (sqrt_ratio ** 2 / 2 ** 256).toFixed(7);
+		return (Number(sqrt_ratio) ** 2 / 2 ** 256).toFixed(7);
 	};
 
 	tickToSqrtRatio = (tick: string): number => {

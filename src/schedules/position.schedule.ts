@@ -15,17 +15,12 @@ export class PositionSchedule {
 		private readonly utilsService: UtilsService,
 	) {}
 
-	//@Cron('0 49 * * * *')
+	//@Cron('0 20 * * * *')
 	private async fetchPositions(): Promise<void> {
 		console.log('Fetching positions...');
 		const tokens = await this.ekuboService.getTokens();
 		from(this.prismaService.getPositions())
 			.pipe(
-				map((positions: Array<PositionDto>) => {
-					return positions.filter((position) => {
-						return this.utilsService.totalDepositedAmountUsd(position, tokens) - this.utilsService.totalWithdrawedAmountUsd(position, tokens) > 500;
-					});
-				}),
 				map((positions: Array<PositionDto>) => {
 					return this.utilsService.chunkArray(
 						positions.map((position) => this.ekuboService.map(position)),
@@ -34,7 +29,8 @@ export class PositionSchedule {
 				}),
 				concatMap((requests: Array<Array<GetTokenInfoRequest>>) => from(requests)),
 				concatMap((requests: Array<GetTokenInfoRequest>) => this.ekuboService.getPositionInfo(requests)),
-				concatMap((positionsInfos: Array<GetTokenInfoResult>) => positionsInfos.map((positionInfos) => this.prismaService.updatePosition(positionInfos, tokens))),
+				concatMap((positionsInfos: Array<GetTokenInfoResult>) => positionsInfos.map((positionInfos) => positionInfos)),
+				concatMap((positionInfos: GetTokenInfoResult) => this.prismaService.updatePosition(positionInfos, tokens)),
 			)
 			.subscribe({
 				next: () => {},
