@@ -4,6 +4,7 @@ import { PrismaService } from '../services/prisma.service';
 import { Event, RpcProvider, hash, num } from 'starknet';
 import { env } from 'process';
 import { BigNumber } from '@ethersproject/bignumber';
+import { UtilsService } from '../services/utils.service';
 
 @Injectable()
 export class EkuboSchedule {
@@ -15,11 +16,14 @@ export class EkuboSchedule {
 
 	private isJobRunning = false;
 
-	constructor(private readonly prismaService: PrismaService) {
+	constructor(
+		private readonly prismaService: PrismaService,
+		private readonly utilsService: UtilsService,
+	) {
 		this.rpcProvider = new RpcProvider({ nodeUrl: env.STARKNET_RPC_URL });
 	}
 
-	@Cron(CronExpression.EVERY_10_MINUTES)
+	@Cron(CronExpression.EVERY_MINUTE)
 	private async fetchPositions(): Promise<void> {
 		if (this.isJobRunning) return;
 		this.isJobRunning = true;
@@ -100,6 +104,7 @@ export class EkuboSchedule {
 		await this.prismaService.addPositionEvent(
 			BigNumber.from(event.data[0]).toNumber(),
 			`${event['block_number']}_${event['transaction_hash']}_1`,
+			event.data[10],
 			event.data[11],
 			event.data[13],
 			true,
@@ -107,12 +112,22 @@ export class EkuboSchedule {
 	}
 
 	private async handleWithdraw(event: Event): Promise<void> {
-		await this.prismaService.addPositionEvent(
-			BigNumber.from(event.data[0]).toNumber(),
-			`${event['block_number']}_${event['transaction_hash']}_0`,
-			event.data[11],
-			event.data[13],
-			false,
-		);
+		const positionId = BigNumber.from(event.data[0]).toNumber();
+		const liquidity = event.data[10];
+		const positionEvents = await this.prismaService.getPositionEvents(positionId);
+		const positionLiquidity = this.utilsService.getPositionLiquidity(positionEvents);
+
+		if (positionLiquidity === BigNumber.from(liquidity).toNumber()) {
+			await this.prismaService.deletePosition(positionId);
+		} else {
+			await this.prismaService.addPositionEvent(
+				positionId,
+				`${event['block_number']}_${event['transaction_hash']}_0`,
+				liquidity,
+				event.data[11],
+				event.data[13],
+				false,
+			);
+		}
 	}
 }

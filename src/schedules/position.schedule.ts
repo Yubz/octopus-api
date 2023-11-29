@@ -5,7 +5,7 @@ import { EkuboService } from '../services/ekubo.service';
 import { PrismaService } from '../services/prisma.service';
 import { UtilsService } from '../services/utils.service';
 import { GetTokenInfoRequest, GetTokenInfoResult } from '../models/ekubo.model';
-import { Position } from '@prisma/client';
+import { PositionDto } from '../dto/position.dto';
 
 @Injectable()
 export class PositionSchedule {
@@ -15,18 +15,23 @@ export class PositionSchedule {
 		private readonly utilsService: UtilsService,
 	) {}
 
-	//@Cron('0 26 * * * *')
+	//@Cron('0 49 * * * *')
 	private async fetchPositions(): Promise<void> {
 		console.log('Fetching positions...');
 		const tokens = await this.ekuboService.getTokens();
 		from(this.prismaService.getPositions())
 			.pipe(
-				map((positions: Array<Position>) =>
-					this.utilsService.chunkArray(
+				map((positions: Array<PositionDto>) => {
+					return positions.filter((position) => {
+						return this.utilsService.totalDepositedAmountUsd(position, tokens) - this.utilsService.totalWithdrawedAmountUsd(position, tokens) > 500;
+					});
+				}),
+				map((positions: Array<PositionDto>) => {
+					return this.utilsService.chunkArray(
 						positions.map((position) => this.ekuboService.map(position)),
 						50,
-					),
-				),
+					);
+				}),
 				concatMap((requests: Array<Array<GetTokenInfoRequest>>) => from(requests)),
 				concatMap((requests: Array<GetTokenInfoRequest>) => this.ekuboService.getPositionInfo(requests)),
 				concatMap((positionsInfos: Array<GetTokenInfoResult>) => positionsInfos.map((positionInfos) => this.prismaService.updatePosition(positionInfos, tokens))),

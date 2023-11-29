@@ -16,6 +16,10 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
 
 	async onModuleInit() {}
 
+	/******************************************************************************************************************************/
+	/* Metadata *******************************************************************************************************************/
+	/******************************************************************************************************************************/
+
 	async getLastBlockSaved(): Promise<MetadataDto> {
 		return this.metadata.findFirst({
 			where: { name: this.METADATA_LAST_BLOCK_SAVED },
@@ -37,8 +41,25 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
 		});
 	}
 
+	/******************************************************************************************************************************/
+	/* Position *******************************************************************************************************************/
+	/******************************************************************************************************************************/
+
 	async getPositions(): Promise<Array<PositionDto>> {
-		return this.position.findMany();
+		return this.position.findMany({
+			include: {
+				positionInfo: true,
+				positionEvents: true,
+			},
+		});
+	}
+
+	async getPosition(id: number): Promise<PositionDto> {
+		return this.position.findFirst({
+			where: {
+				id,
+			},
+		});
 	}
 
 	async getExplorePositions(): Promise<Array<PositionDto>> {
@@ -54,18 +75,6 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
 						gt: 500,
 					},
 				},
-			},
-		});
-	}
-
-	async getPosition(id: number): Promise<PositionDto> {
-		return this.position.findFirst({
-			where: {
-				id,
-			},
-			include: {
-				positionInfo: true,
-				positionEvents: true,
 			},
 		});
 	}
@@ -104,22 +113,14 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
 		} catch (error) {}
 	}
 
-	async addPositionEvent(positionId: number, idEvent: string, amount0: string, amount1: string, isDeposit: boolean): Promise<void> {
-		try {
-			await this.positionEvent.create({
-				data: {
-					id: idEvent,
-					amount0,
-					amount1,
-					isDeposit,
-					position: {
-						connect: {
-							id: positionId,
-						},
-					},
-				},
-			});
-		} catch (error) {}
+	async deletePosition(id: number): Promise<void> {
+		await this.deletePositionEvents(id);
+		await this.deletePositionInfo(id);
+		await this.position.delete({
+			where: {
+				id,
+			},
+		});
 	}
 
 	async updatePosition(positionsInfos: GetTokenInfoResult, tokens: Array<Token>): Promise<void> {
@@ -131,30 +132,14 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
 		const token0Price = Number(token0.price.price);
 		const token1Price = Number(token1.price.price);
 
-		const totalDepositedAmount0Usd = position.positionEvents.reduce((amount0: number, event: PositionEventDto) => {
-			const amount = (Number(event.amount0) / 10 ** token0.decimals) * token0Price;
-			return event.isDeposit ? amount0 + amount : amount0;
-		}, 0);
-		const totalDepositedAmount1Usd = position.positionEvents.reduce((amount1: number, event: PositionEventDto) => {
-			const amount = (Number(event.amount1) / 10 ** token1.decimals) * token1Price;
-			return event.isDeposit ? amount1 + amount : amount1;
-		}, 0);
-		const totalWithdrawedAmount0Usd = position.positionEvents.reduce((amount0: number, event: PositionEventDto) => {
-			const amount = (Number(event.amount0) / 10 ** token0.decimals) * token0Price;
-			return event.isDeposit ? amount0 : amount0 + amount;
-		}, 0);
-		const totalWithdrawedAmount1Usd = position.positionEvents.reduce((amount1: number, event: PositionEventDto) => {
-			const amount = (Number(event.amount1) / 10 ** token1.decimals) * token1Price;
-			return event.isDeposit ? amount1 : amount1 + amount;
-		}, 0);
-		const totalDepositedAmountUsd = totalDepositedAmount0Usd + totalDepositedAmount1Usd;
-		const totalWithdrawedAmountUsd = totalWithdrawedAmount0Usd + totalWithdrawedAmount1Usd;
+		const totalDepositedAmountUsd = this.utilsService.totalDepositedAmountUsd(position, tokens);
+		const totalWithdrawedAmountUsd = this.utilsService.totalWithdrawedAmountUsd(position, tokens);
 
 		const amountUsd = (Number(positionsInfos.amount0) / 10 ** token0.decimals) * token0Price + (Number(positionsInfos.amount1) / 10 ** token1.decimals) * token1Price;
 		const totalCurrentFeesUsd =
 			(Number(positionsInfos.fees0) / 10 ** token0.decimals) * token0Price + (Number(positionsInfos.fees1) / 10 ** token1.decimals) * token1Price;
-		const totalPnlUsd = totalWithdrawedAmountUsd + totalCurrentFeesUsd + amountUsd - totalDepositedAmountUsd;
-		const totalFeesUsd = totalWithdrawedAmountUsd - totalDepositedAmountUsd + totalCurrentFeesUsd;
+		const totalPnlUsd = amountUsd - totalDepositedAmountUsd + totalCurrentFeesUsd;
+		const totalFeesUsd = totalCurrentFeesUsd;
 		const durationPositionInDays = this.utilsService.daysBetweenDates(new Date(position.mintTimestamp * 1000), new Date());
 
 		const data = {
@@ -169,11 +154,77 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
 			totalApr: this.utilsService.calculateSimpleAPR(totalPnlUsd / totalDepositedAmountUsd, durationPositionInDays),
 			feeApr: this.utilsService.calculateSimpleAPR(totalFeesUsd / totalDepositedAmountUsd, durationPositionInDays),
 		};
-		await this.positionInfo.create({
-			data: {
-				...data,
-				positionId: position.id,
+
+		if (amountUsd > 500) {
+			await this.positionInfo.upsert({
+				create: {
+					...data,
+					positionId: position.id,
+				},
+				update: data,
+				where: {
+					positionId: position.id,
+				},
+			});
+		} else {
+			try {
+				await this.positionInfo.delete({
+					where: {
+						positionId: position.id,
+					},
+				});
+			} catch (error) {}
+		}
+	}
+
+	/******************************************************************************************************************************/
+	/* PositionInfo ***************************************************************************************************************/
+	/******************************************************************************************************************************/
+
+	async deletePositionInfo(positionId: number): Promise<void> {
+		await this.positionInfo.delete({
+			where: {
+				positionId,
 			},
 		});
+	}
+
+	/******************************************************************************************************************************/
+	/* PositionEvent **************************************************************************************************************/
+	/******************************************************************************************************************************/
+
+	async deletePositionEvents(positionId: number): Promise<void> {
+		await this.positionEvent.deleteMany({
+			where: {
+				positionId,
+			},
+		});
+	}
+
+	async getPositionEvents(positionId: number): Promise<Array<PositionEventDto>> {
+		return this.positionEvent.findMany({
+			where: {
+				positionId,
+			},
+		});
+	}
+
+	async addPositionEvent(positionId: number, idEvent: string, liquidity: string, amount0: string, amount1: string, isDeposit: boolean): Promise<void> {
+		try {
+			await this.positionEvent.create({
+				data: {
+					id: idEvent,
+					amount0,
+					amount1,
+					liquidity,
+					isDeposit,
+					position: {
+						connect: {
+							id: positionId,
+						},
+					},
+				},
+			});
+		} catch (error) {}
 	}
 }

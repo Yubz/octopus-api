@@ -24,7 +24,7 @@ model Position {
   boundLowerMag            String       
   boundLowerSign           String        
   boundUpperMag            String       
-  boundUpperSign           String      
+  boundUpperSign           String
   positionInfo             PositionInfo?
   positionEvents           PositionEvent[]
 }
@@ -50,6 +50,7 @@ model PositionEvent {
   position                 Position     @relation(fields: [positionId], references: [id])
   positionId               Int          
   amount0                  String      
-  amount1                  String      
+  amount1                  String  
+  liquidity                String   
   isDeposit                Boolean
 }
