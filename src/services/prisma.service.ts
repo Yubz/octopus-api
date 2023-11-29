@@ -5,6 +5,7 @@ import { GetTokenInfoResult, Token } from '../models/ekubo.model';
 import { PositionDto } from '../dto/position.dto';
 import { MetadataDto } from '../dto/metadata.dto';
 import { PositionEventDto } from '../dto/position-event.dto';
+import { PositionInfoDto } from '../dto/position-info.dto';
 
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit {
@@ -66,9 +67,8 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
 		return this.position.findMany({
 			include: {
 				positionInfo: true,
-				positionEvents: true,
 			},
-			orderBy: { positionInfo: { totalApr: 'desc' } },
+			orderBy: { positionInfo: { apr: 'desc' } },
 			where: {
 				positionInfo: {
 					amountUsd: {
@@ -123,8 +123,8 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
 		});
 	}
 
-	async updatePosition(positionsInfos: GetTokenInfoResult, tokens: Array<Token>): Promise<void> {
-		const position = await this.getPosition(positionsInfos.id);
+	async updatePosition(positionInfos: GetTokenInfoResult, tokens: Array<Token>): Promise<void> {
+		const position = await this.getPosition(positionInfos.id);
 		if (!position) return;
 		const token0 = tokens.find((token) => token.l2_token_address.slice(-10) === position.token0.slice(-10)) as Token;
 		const token1 = tokens.find((token) => token.l2_token_address.slice(-10) === position.token1.slice(-10)) as Token;
@@ -135,24 +135,25 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
 		const totalDepositedAmountUsd = this.utilsService.totalDepositedAmountUsd(position, tokens);
 		const totalWithdrawedAmountUsd = this.utilsService.totalWithdrawedAmountUsd(position, tokens);
 
-		const amountUsd = (Number(positionsInfos.amount0) / 10 ** token0.decimals) * token0Price + (Number(positionsInfos.amount1) / 10 ** token1.decimals) * token1Price;
+		const currentPrice = this.utilsService.sqrtRatioToPrice(positionInfos.pool_price.sqrt_ratio);
+		const minPrice = this.utilsService.sqrtRatioToPrice(this.utilsService.tickToSqrtRatio(position.boundLowerMag));
+		const maxPrice = this.utilsService.sqrtRatioToPrice(this.utilsService.tickToSqrtRatio(position.boundUpperMag));
+
+		const amountUsd = (Number(positionInfos.amount0) / 10 ** token0.decimals) * token0Price + (Number(positionInfos.amount1) / 10 ** token1.decimals) * token1Price;
 		const totalCurrentFeesUsd =
-			(Number(positionsInfos.fees0) / 10 ** token0.decimals) * token0Price + (Number(positionsInfos.fees1) / 10 ** token1.decimals) * token1Price;
-		const totalPnlUsd = amountUsd - totalDepositedAmountUsd + totalCurrentFeesUsd;
-		const totalFeesUsd = totalCurrentFeesUsd;
-		const durationPositionInDays = this.utilsService.daysBetweenDates(new Date(position.mintTimestamp * 1000), new Date());
+			(Number(positionInfos.fees0) / 10 ** token0.decimals) * token0Price + (Number(positionInfos.fees1) / 10 ** token1.decimals) * token1Price;
+		const pnlUsd = amountUsd - totalDepositedAmountUsd + totalCurrentFeesUsd;
+		const feesUsd = totalCurrentFeesUsd;
+		const durationInDays = this.utilsService.daysBetweenDates(new Date(position.mintTimestamp * 1000), new Date());
 
 		const data = {
-			sqrtRatio: positionsInfos.pool_price.sqrt_ratio.toString(),
-			fees0: positionsInfos.fees0.toString(),
-			fees1: positionsInfos.fees1.toString(),
-			amount0: positionsInfos.amount0.toString(),
-			amount1: positionsInfos.amount1.toString(),
-			amountUsd: amountUsd,
-			totalFeesUsd: totalFeesUsd,
-			totalPnlUsd: totalPnlUsd,
-			totalApr: this.utilsService.calculateSimpleAPR(totalPnlUsd / totalDepositedAmountUsd, durationPositionInDays),
-			feeApr: this.utilsService.calculateSimpleAPR(totalFeesUsd / totalDepositedAmountUsd, durationPositionInDays),
+			amountUsd,
+			feesUsd,
+			pnlUsd,
+			apr: this.utilsService.calculateSimpleAPR(pnlUsd / totalDepositedAmountUsd, durationInDays),
+			feeApr: this.utilsService.calculateSimpleAPR(feesUsd / totalDepositedAmountUsd, durationInDays),
+			inRange: Number(currentPrice) >= Number(minPrice) && Number(currentPrice) <= Number(maxPrice),
+			durationInDays: durationInDays,
 		};
 
 		if (amountUsd > 500) {
@@ -166,14 +167,6 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
 					positionId: position.id,
 				},
 			});
-		} else {
-			try {
-				await this.positionInfo.delete({
-					where: {
-						positionId: position.id,
-					},
-				});
-			} catch (error) {}
 		}
 	}
 

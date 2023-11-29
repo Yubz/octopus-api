@@ -3,6 +3,7 @@ import { PositionDto } from '../dto/position.dto';
 import { Token } from '../models/ekubo.model';
 import { PositionEventDto } from '../dto/position-event.dto';
 import { BigNumber } from '@ethersproject/bignumber';
+import Decimal from 'decimal.js-light';
 
 @Injectable()
 export class UtilsService {
@@ -84,5 +85,14 @@ export class UtilsService {
 		const days = diff / (1000 * 60 * 60 * 24);
 
 		return days;
+	};
+
+	sqrtRatioToPrice = (sqrt_ratio: number): string => {
+		return (sqrt_ratio ** 2 / 2 ** 256).toFixed(7);
+	};
+
+	tickToSqrtRatio = (tick: string): number => {
+		Decimal.set({ precision: 78 });
+		return new Decimal('1.000001').sqrt().pow(Number(tick)).mul(new Decimal(2).pow(128)).toNumber();
 	};
 }

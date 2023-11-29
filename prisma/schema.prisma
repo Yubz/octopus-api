@@ -32,17 +32,14 @@ model Position {
 model PositionInfo {
   id                       String           @id @map("_id") @default(auto()) @db.ObjectId
   position                 Position         @relation(fields: [positionId], references: [id])
-  positionId               Int              @unique       
-  sqrtRatio                String          
-  fees0                    String        
-  fees1                    String          
-  amount0                  String          
-  amount1                  String         
+  positionId               Int              @unique           
   amountUsd                Float      
-  totalFeesUsd             Float           
-  totalPnlUsd              Float        
-  totalApr                 Float          
-  feeApr                   Float           
+  feesUsd                  Float           
+  pnlUsd                   Float        
+  apr                      Float          
+  feeApr                   Float
+  inRange                  Boolean
+  durationInDays           Float       
 }
 
 model PositionEvent {

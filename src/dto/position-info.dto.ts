@@ -1,13 +1,10 @@
 export class PositionInfoDto {
 	id: string;
-	sqrtRatio: string;
-	fees0: string;
-	fees1: string;
-	amount0: string;
-	amount1: string;
+	feesUsd: number;
 	amountUsd: number;
-	totalFeesUsd: number;
-	totalPnlUsd: number;
-	totalApr: number;
+	pnlUsd: number;
+	apr: number;
 	feeApr: number;
+	inRange: boolean;
+	durationInDays: number;
 }
