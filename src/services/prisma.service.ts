@@ -229,7 +229,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
 			});
 		} catch (error) {
 			if (error instanceof Prisma.PrismaClientKnownRequestError) {
-				if (error.code === 'P2002') {
+				if (error.code === 'P2025') {
 					console.log(`Position ${positionId} not found.`);
 				}
 			}
