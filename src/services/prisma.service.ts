@@ -5,12 +5,16 @@ import { GetTokenInfoResult, Token } from '../models/ekubo.model';
 import { PositionDto } from '../dto/position.dto';
 import { MetadataDto } from '../dto/metadata.dto';
 import { PositionEventDto } from '../dto/position-event.dto';
+import { PositionService } from './position.service';
 
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit {
 	private readonly METADATA_LAST_BLOCK_SAVED = 'last_bloc_saved';
 
-	constructor(private readonly utilsService: UtilsService) {
+	constructor(
+		private readonly utilsService: UtilsService,
+		private readonly positionService: PositionService,
+	) {
 		super();
 	}
 
@@ -54,10 +58,22 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
 		});
 	}
 
-	async getPosition(id: number): Promise<PositionDto> {
+	async getPositionById(id: number): Promise<PositionDto> {
 		return this.position.findFirst({
 			where: {
 				id,
+			},
+			include: {
+				positionEvents: true,
+				positionInfo: true,
+			},
+		});
+	}
+
+	async getPositionsByAddress(owner: string): Promise<Array<PositionDto>> {
+		return this.position.findMany({
+			where: {
+				owner,
 			},
 			include: {
 				positionEvents: true,
@@ -129,40 +145,18 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
 	}
 
 	async updatePosition(positionInfos: GetTokenInfoResult, tokens: Array<Token>): Promise<void> {
-		const position = await this.getPosition(positionInfos.id);
-		if (!position) return;
-		const token0 = tokens.find((token) => token.l2_token_address.slice(-10) === position.token0.slice(-10)) as Token;
-		const token1 = tokens.find((token) => token.l2_token_address.slice(-10) === position.token1.slice(-10)) as Token;
-		if (!token0?.price?.price || !token1?.price?.price) return;
-		const token0Price = Number(token0.price.price);
-		const token1Price = Number(token1.price.price);
+		const position = await this.getPositionById(positionInfos.id);
+		const positionCard = this.positionService.getPositionCard(position, positionInfos, tokens);
+		if (!positionCard) return;
 
-		const depositedAmountUsd = this.utilsService.depositedAmountUsd(position, tokens);
-		const withdrawedAmountUsd = this.utilsService.withdrawedAmountUsd(position, tokens);
-
-		const currentPrice = this.utilsService.sqrtRatioToPrice(positionInfos.pool_price.sqrt_ratio);
-		const minPrice = this.utilsService.sqrtRatioToPrice(this.utilsService.tickToSqrtRatio(position.boundLowerMag));
-		const maxPrice = this.utilsService.sqrtRatioToPrice(this.utilsService.tickToSqrtRatio(position.boundUpperMag));
-
-		const amountUsd = (Number(positionInfos.amount0) / 10 ** token0.decimals) * token0Price + (Number(positionInfos.amount1) / 10 ** token1.decimals) * token1Price;
-		const feesUsd = (Number(positionInfos.fees0) / 10 ** token0.decimals) * token0Price + (Number(positionInfos.fees1) / 10 ** token1.decimals) * token1Price;
-		let pnlUsd = amountUsd - depositedAmountUsd + feesUsd;
-		if (withdrawedAmountUsd > 0) pnlUsd += withdrawedAmountUsd;
-
-		if (position.id === 4) {
-			console.log(amountUsd);
-			console.log(withdrawedAmountUsd);
-			console.log(pnlUsd);
-		}
-		const durationInDays = this.utilsService.daysBetweenDates(new Date(position.mintTimestamp * 1000), new Date());
 		const data = {
-			amountUsd,
-			feesUsd,
-			pnlUsd,
-			apr: this.utilsService.calculateSimpleAPR(pnlUsd / depositedAmountUsd, durationInDays),
-			feeApr: this.utilsService.calculateSimpleAPR(feesUsd / depositedAmountUsd, durationInDays),
-			inRange: Number(currentPrice) >= Number(minPrice) && Number(currentPrice) <= Number(maxPrice),
-			durationInDays: durationInDays,
+			amountUsd: positionCard.amountUsd,
+			feesUsd: positionCard.feesUsd,
+			pnlUsd: positionCard.pnlUsd,
+			apr: positionCard.apr,
+			feeApr: positionCard.feeApr,
+			inRange: positionCard.inRange,
+			durationInDays: positionCard.durationInDays,
 		};
 
 		await this.positionInfo.upsert({
@@ -234,7 +228,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
 				},
 			});
 		} catch (error) {
-			console.log(error);
+			console.log(`Position ${positionId} not found.`);
 		}
 	}
 }

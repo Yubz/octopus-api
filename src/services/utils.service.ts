@@ -95,4 +95,16 @@ export class UtilsService {
 		Decimal.set({ precision: 78 });
 		return new Decimal('1.000001').sqrt().pow(Number(tick)).mul(new Decimal(2).pow(128)).toNumber();
 	};
+
+	getPoolFee = (hexFee: string): number => {
+		const bigIntValue = BigInt('170141183460469235273462165868118016');
+		const decimalValue = 0.0005;
+		const scale = Number(bigIntValue) / Number(decimalValue);
+
+		return Number((Number(hexFee) / scale).toFixed(8));
+	};
+
+	getPoolTickSpacing = (hexTickSpacing: string): number => {
+		return Number(Number(Number(BigInt(hexTickSpacing)) / 1000000).toFixed(4));
+	};
 }

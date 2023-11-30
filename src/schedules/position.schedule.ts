@@ -28,14 +28,14 @@ export class PositionSchedule {
 					);
 				}),
 				concatMap((requests: Array<Array<GetTokenInfoRequest>>) => from(requests)),
-				concatMap((requests: Array<GetTokenInfoRequest>) => this.ekuboService.getPositionInfo(requests)),
+				concatMap((requests: Array<GetTokenInfoRequest>) => this.ekuboService.getPositionsInfo(requests)),
 				concatMap((positionsInfos: Array<GetTokenInfoResult>) => positionsInfos.map((positionInfos) => positionInfos)),
 				concatMap((positionInfos: GetTokenInfoResult) => this.prismaService.updatePosition(positionInfos, tokens)),
 			)
 			.subscribe({
 				next: () => {},
 				error: (error) => {
-					console.log(error);
+					console.log('Error fetching positions', error);
 				},
 				complete: () => {
 					console.log('Fetching positions done.');

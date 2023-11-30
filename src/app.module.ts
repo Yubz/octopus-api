@@ -7,10 +7,11 @@ import { PositionController } from './controllers/position.controller';
 import { UtilsService } from './services/utils.service';
 import { PositionSchedule } from './schedules/position.schedule';
 import { EkuboSchedule } from './schedules/ekubo.schedule';
+import { PositionService } from './services/position.service';
 
 @Module({
 	imports: [ScheduleModule.forRoot(), HttpModule],
 	controllers: [PositionController],
-	providers: [PrismaService, EkuboService, UtilsService, PositionSchedule, EkuboSchedule],
+	providers: [PrismaService, EkuboService, UtilsService, PositionService, PositionSchedule, EkuboSchedule],
 })
 export class AppModule {}

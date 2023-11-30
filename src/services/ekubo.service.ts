@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { constants, Provider, Contract } from 'starknet';
 import { GetTokenInfoRequest, GetTokenInfoResult, Token, TokenPrice } from '../models/ekubo.model';
 import { env } from 'process';
-import { Position } from '@prisma/client';
+import { PositionDto } from '../dto/position.dto';
 
 @Injectable()
 export class EkuboService {
@@ -12,7 +12,7 @@ export class EkuboService {
 	/* Ekubo SC *******************************************************************************************************************/
 	/******************************************************************************************************************************/
 
-	getPositionInfo = async (request: Array<GetTokenInfoRequest>): Promise<Array<GetTokenInfoResult>> => {
+	getPositionsInfo = async (request: Array<GetTokenInfoRequest>): Promise<Array<GetTokenInfoResult>> => {
 		const ekuboContract = await this.initEkuboContract(this.POSITIONS);
 		const results = await ekuboContract.get_tokens_info(request);
 
@@ -52,7 +52,7 @@ export class EkuboService {
 	/* Ekubo Mappers **************************************************************************************************************/
 	/******************************************************************************************************************************/
 
-	map(position: Position): GetTokenInfoRequest {
+	map(position: PositionDto): GetTokenInfoRequest {
 		return {
 			id: position.id,
 			pool_key: {
