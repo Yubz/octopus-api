@@ -1,5 +1,5 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 import { UtilsService } from './utils.service';
 import { GetTokenInfoResult, Token } from '../models/ekubo.model';
 import { PositionDto } from '../dto/position.dto';
@@ -228,7 +228,11 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
 				},
 			});
 		} catch (error) {
-			console.log(`Position ${positionId} not found.`);
+			if (error instanceof Prisma.PrismaClientKnownRequestError) {
+				if (error.code === 'P2002') {
+					console.log(`Position ${positionId} not found.`);
+				}
+			}
 		}
 	}
 }
