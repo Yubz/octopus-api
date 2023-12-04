@@ -23,7 +23,8 @@ export class PositionController {
 	}
 
 	@Get('explore')
-	getExplorePositions(): Promise<Array<PositionDto>> {
-		return this.prismaService.getExplorePositions();
+	async getExplorePositions(): Promise<Array<PositionCardDto>> {
+		const positions = await this.prismaService.getExplorePositions();
+		return this.positionService.getPositionCards(positions);
 	}
 }

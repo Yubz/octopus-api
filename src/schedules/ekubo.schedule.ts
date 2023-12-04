@@ -34,7 +34,10 @@ export class EkuboSchedule {
 		}
 		const lastBlockStarknet = (await this.rpcProvider.getBlock('latest')).block_number;
 		const fromBlock = Number(lastBlockSavedDatabase);
-		if (lastBlockStarknet <= fromBlock) return;
+		if (lastBlockStarknet <= fromBlock) {
+			this.isJobRunning = false;
+			return;
+		}
 		const toBlock = Math.min(lastBlockStarknet, fromBlock + 999);
 		const events = await this.fetchEvents(fromBlock, toBlock);
 
