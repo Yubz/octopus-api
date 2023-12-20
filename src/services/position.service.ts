@@ -27,7 +27,7 @@ export class PositionService {
 	}
 
 	getPositionCard(position: PositionDto, getTokenInfoResult: GetTokenInfoResult, tokens: Array<Token>): PositionCardDto {
-		if (!position) return null;
+		if (!position || !position.positionEvents || !position.positionEvents.length) return null;
 		const token0 = tokens.find((token) => token.l2_token_address.slice(-10) === position.token0.slice(-10)) as Token;
 		const token1 = tokens.find((token) => token.l2_token_address.slice(-10) === position.token1.slice(-10)) as Token;
 		if (!token0?.price?.price || !token1?.price?.price) return null;

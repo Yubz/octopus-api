@@ -82,6 +82,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
 		return this.position.findMany({
 			include: {
 				positionInfo: true,
+				positionEvents: true,
 			},
 			orderBy: { positionInfo: { apr: 'desc' } },
 			where: {
