@@ -87,7 +87,7 @@ export class UtilsService {
 		return days;
 	};
 
-	sqrtRatioToPrice = (sqrt_ratio: number): string => {
+	sqrtRatioToPrice = (sqrt_ratio: bigint): string => {
 		return (Number(sqrt_ratio) ** 2 / 2 ** 256).toFixed(7);
 	};
 

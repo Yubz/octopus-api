@@ -35,10 +35,10 @@ export class EkuboService {
 	/******************************************************************************************************************************/
 
 	getTokens = async (): Promise<Array<Token>> => {
-		const tokens = await fetch('https://mainnet-api.ekubo.org/tokens').then((res) => res.json());
-		tokens.forEach(async (token: Token) => {
-			token.price = await this.getTokenPriceUsd(token.l2_token_address);
-		});
+		const tokens: Array<any> = await fetch('https://mainnet-api.ekubo.org/tokens').then((res) => res.json());
+		for (let index = 0; index < tokens.length; index++) {
+			tokens[index].price = await this.getTokenPriceUsd(tokens[index].l2_token_address);
+		}
 		return tokens;
 	};
 

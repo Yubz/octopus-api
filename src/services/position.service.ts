@@ -36,8 +36,8 @@ export class PositionService {
 		const amount0 = Number(getTokenInfoResult.amount0) / 10 ** token0.decimals;
 		const amount1 = Number(getTokenInfoResult.amount1) / 10 ** token1.decimals;
 		const currentPrice = this.utilsService.sqrtRatioToPrice(getTokenInfoResult.pool_price.sqrt_ratio);
-		const minPrice = this.utilsService.sqrtRatioToPrice(this.utilsService.tickToSqrtRatio(position.boundLowerMag));
-		const maxPrice = this.utilsService.sqrtRatioToPrice(this.utilsService.tickToSqrtRatio(position.boundUpperMag));
+		const minPrice = this.utilsService.sqrtRatioToPrice(BigInt(this.utilsService.tickToSqrtRatio(position.boundLowerMag)));
+		const maxPrice = this.utilsService.sqrtRatioToPrice(BigInt(this.utilsService.tickToSqrtRatio(position.boundUpperMag)));
 		const positionEventDeposit = position.positionEvents.find((positionEvent) => positionEvent.isDeposit);
 		const depositedAmountUsd = this.utilsService.depositedAmountUsd(position, tokens);
 		const withdrawedAmountUsd = this.utilsService.withdrawedAmountUsd(position, tokens);
@@ -64,8 +64,8 @@ export class PositionService {
 			amountUsd: amount0 * token0Price + amount1 * token1Price,
 			feesUsd: feesUsd,
 			pnlUsd: pnlUsd,
-			depositedAmount0: Number(positionEventDeposit.amount0),
-			depositedAmount1: Number(positionEventDeposit.amount1),
+			depositedAmount0: Number(positionEventDeposit.amount0) / 10 ** token0.decimals,
+			depositedAmount1: Number(positionEventDeposit.amount1) / 10 ** token1.decimals,
 			apr: this.utilsService.calculateSimpleAPR(pnlUsd / depositedAmountUsd, durationInDays),
 			feeApr: this.utilsService.calculateSimpleAPR(feesUsd / depositedAmountUsd, durationInDays),
 			inRange: Number(currentPrice) >= Number(minPrice) && Number(currentPrice) <= Number(maxPrice),

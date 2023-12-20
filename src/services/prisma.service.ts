@@ -1,6 +1,5 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { Prisma, PrismaClient } from '@prisma/client';
-import { UtilsService } from './utils.service';
 import { GetTokenInfoResult, Token } from '../models/ekubo.model';
 import { PositionDto } from '../dto/position.dto';
 import { MetadataDto } from '../dto/metadata.dto';
@@ -11,10 +10,7 @@ import { PositionService } from './position.service';
 export class PrismaService extends PrismaClient implements OnModuleInit {
 	private readonly METADATA_LAST_BLOCK_SAVED = 'last_bloc_saved';
 
-	constructor(
-		private readonly utilsService: UtilsService,
-		private readonly positionService: PositionService,
-	) {
+	constructor(private readonly positionService: PositionService) {
 		super();
 	}
 

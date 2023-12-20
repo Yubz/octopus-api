@@ -19,7 +19,7 @@ export interface GetTokenInfoResult {
 }
 
 interface PoolPrice {
-	sqrt_ratio: number;
+	sqrt_ratio: bigint;
 	tick: Tick;
 	call_points: CallPoints;
 }

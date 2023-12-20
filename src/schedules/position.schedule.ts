@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
-import { concatMap, from, map } from 'rxjs';
+import { catchError, concatMap, from, map } from 'rxjs';
 import { EkuboService } from '../services/ekubo.service';
 import { PrismaService } from '../services/prisma.service';
 import { UtilsService } from '../services/utils.service';
@@ -9,15 +9,19 @@ import { PositionDto } from '../dto/position.dto';
 
 @Injectable()
 export class PositionSchedule {
+	private isJobRunning = false;
+
 	constructor(
 		private readonly ekuboService: EkuboService,
 		private readonly prismaService: PrismaService,
 		private readonly utilsService: UtilsService,
 	) {}
 
-	//@Cron('0 20 * * * *')
+	//@Cron('0 34 * * * *')
 	private async fetchPositions(): Promise<void> {
+		if (this.isJobRunning) return;
 		console.log('Fetching positions...');
+		this.isJobRunning = true;
 		const tokens = await this.ekuboService.getTokens();
 		from(this.prismaService.getPositions())
 			.pipe(
@@ -39,6 +43,7 @@ export class PositionSchedule {
 				},
 				complete: () => {
 					console.log('Fetching positions done.');
+					this.isJobRunning = false;
 				},
 			});
 	}
