@@ -39,6 +39,7 @@ export class PositionService {
 		const minPrice = this.utilsService.sqrtRatioToPrice(BigInt(this.utilsService.tickToSqrtRatio(position.boundLowerMag)));
 		const maxPrice = this.utilsService.sqrtRatioToPrice(BigInt(this.utilsService.tickToSqrtRatio(position.boundUpperMag)));
 		const positionEventDeposit = position.positionEvents.find((positionEvent) => positionEvent.isDeposit);
+		if (!positionEventDeposit) return null;
 		const depositedAmountUsd = this.utilsService.depositedAmountUsd(position, tokens);
 		const withdrawedAmountUsd = this.utilsService.withdrawedAmountUsd(position, tokens);
 		const amountUsd =

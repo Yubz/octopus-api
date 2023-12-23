@@ -17,12 +17,13 @@ export class PositionSchedule {
 		private readonly utilsService: UtilsService,
 	) {}
 
-	//@Cron('0 34 * * * *')
+	@Cron('0 54 * * * *')
 	private async fetchPositions(): Promise<void> {
 		if (this.isJobRunning) return;
 		console.log('Fetching positions...');
 		this.isJobRunning = true;
 		const tokens = await this.ekuboService.getTokens();
+		let batchNumber = 0;
 		from(this.prismaService.getPositions())
 			.pipe(
 				map((positions: Array<PositionDto>) => {
@@ -37,7 +38,9 @@ export class PositionSchedule {
 				concatMap((positionInfos: GetTokenInfoResult) => this.prismaService.updatePosition(positionInfos, tokens)),
 			)
 			.subscribe({
-				next: () => {},
+				next: () => {
+					console.log(batchNumber++);
+				},
 				error: (error) => {
 					console.log('Error fetching positions', error);
 				},

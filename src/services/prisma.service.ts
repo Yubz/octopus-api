@@ -48,8 +48,8 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
 	async getPositions(): Promise<Array<PositionDto>> {
 		return this.position.findMany({
 			include: {
-				positionInfo: true,
-				positionEvents: true,
+				positionInfo: false,
+				positionEvents: false,
 			},
 		});
 	}
