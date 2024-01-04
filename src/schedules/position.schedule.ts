@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Cron } from '@nestjs/schedule';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { catchError, concatMap, from, map } from 'rxjs';
 import { EkuboService } from '../services/ekubo.service';
 import { PrismaService } from '../services/prisma.service';
@@ -17,7 +17,7 @@ export class PositionSchedule {
 		private readonly utilsService: UtilsService,
 	) {}
 
-	@Cron('0 54 * * * *')
+	@Cron(CronExpression.EVERY_12_HOURS)
 	private async fetchPositions(): Promise<void> {
 		if (this.isJobRunning) return;
 		console.log('Fetching positions...');
