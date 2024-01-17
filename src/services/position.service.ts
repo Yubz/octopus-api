@@ -73,4 +73,32 @@ export class PositionService {
 			durationInDays: durationInDays,
 		};
 	}
+
+	mapExplorePositionCard(position: PositionDto, tokens: Array<Token>): PositionCardDto {
+		const token0 = tokens.find((token) => token.l2_token_address.slice(-10) === position.token0.slice(-10)) as Token;
+		const token1 = tokens.find((token) => token.l2_token_address.slice(-10) === position.token1.slice(-10)) as Token;
+
+		return {
+			id: position.id,
+			owner: position.owner,
+			token0Symbol: token0.symbol,
+			token1Symbol: token1.symbol,
+			fee: this.utilsService.getPoolFee(position.fee),
+			tickSpacing: this.utilsService.getPoolTickSpacing(position.tickSpacing),
+			currentPrice: '',
+			minPrice: '',
+			maxPrice: '',
+			amount0: 0,
+			amount1: 0,
+			amountUsd: position.positionInfo?.amountUsd,
+			feesUsd: position.positionInfo?.feesUsd,
+			pnlUsd: position.positionInfo?.pnlUsd,
+			depositedAmount0: 0,
+			depositedAmount1: 0,
+			apr: position.positionInfo?.apr,
+			feeApr: position.positionInfo?.feeApr,
+			inRange: position.positionInfo?.inRange,
+			durationInDays: position.positionInfo?.durationInDays,
+		};
+	}
 }

@@ -3,12 +3,14 @@ import { PrismaService } from '../services/prisma.service';
 import { PositionDto } from '../dto/position.dto';
 import { PositionCardDto } from '../dto/position-card.dto';
 import { PositionService } from '../services/position.service';
+import { EkuboService } from '../services/ekubo.service';
 
 @Controller('position')
 export class PositionController {
 	constructor(
 		private readonly prismaService: PrismaService,
 		private readonly positionService: PositionService,
+		private readonly ekuboService: EkuboService,
 	) {}
 
 	@Get('id/:id')
@@ -25,6 +27,7 @@ export class PositionController {
 	@Get('explore')
 	async getExplorePositions(): Promise<Array<PositionCardDto>> {
 		const positions = await this.prismaService.getExplorePositions();
-		return this.positionService.getPositionCards(positions);
+		const tokens = await this.ekuboService.getTokens();
+		return positions.map((position) => this.positionService.mapExplorePositionCard(position, tokens));
 	}
 }
