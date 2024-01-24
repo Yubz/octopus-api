@@ -10,6 +10,9 @@ import { PositionService } from './position.service';
 export class PrismaService extends PrismaClient implements OnModuleInit {
 	private readonly METADATA_LAST_BLOCK_SAVED = 'last_bloc_saved';
 
+	private explorePositionsCached: Array<PositionDto> = [];
+	private timestampCached: number = Date.now();
+
 	constructor(private readonly positionService: PositionService) {
 		super();
 	}
@@ -79,10 +82,12 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
 	}
 
 	async getExplorePositions(): Promise<Array<PositionDto>> {
-		return this.position.findMany({
+		if (this.explorePositionsCached.length > 0 && Date.now() < this.timestampCached + 3600 * 1000) {
+			return this.explorePositionsCached;
+		}
+		const explorePositions = await this.position.findMany({
 			include: {
 				positionInfo: true,
-				positionEvents: true,
 			},
 			orderBy: { positionInfo: { apr: 'desc' } },
 			where: {
@@ -93,6 +98,9 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
 				},
 			},
 		});
+		this.explorePositionsCached = explorePositions;
+		this.timestampCached = Date.now();
+		return explorePositions;
 	}
 
 	async addPosition(

@@ -17,7 +17,7 @@ export class PositionSchedule {
 		private readonly utilsService: UtilsService,
 	) {}
 
-	@Cron(CronExpression.EVERY_12_HOURS)
+	@Cron(CronExpression.EVERY_DAY_AT_NOON)
 	private async fetchPositions(): Promise<void> {
 		if (this.isJobRunning) return;
 		console.log('Fetching positions...');

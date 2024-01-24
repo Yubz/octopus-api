@@ -23,7 +23,7 @@ export class EkuboSchedule {
 		this.rpcProvider = new RpcProvider({ nodeUrl: env.STARKNET_RPC_URL });
 	}
 
-	@Cron(CronExpression.EVERY_MINUTE)
+	//@Cron(CronExpression.EVERY_MINUTE)
 	private async fetchPositions(): Promise<void> {
 		if (this.isJobRunning) return;
 		this.isJobRunning = true;
